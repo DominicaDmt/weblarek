@@ -44,4 +44,37 @@ export interface IApiResponse {
   items: IProduct[];
 }
 
+// Типы для событий
+export type EventName = string | RegExp;
 
+export interface ICatalogItemData {
+  item: IProduct;
+}
+
+export interface IBasketItemData {
+  item: IProduct;
+  index?: number;
+}
+
+export interface IModalData {
+  content: HTMLElement;
+}
+
+export interface IFormFieldData {
+  field: string;
+  value: string;
+}
+
+export interface IOrderSubmitData {
+  payment: string;
+  address: string;
+}
+
+export interface IContactsSubmitData {
+  email: string;
+  phone: string;
+}
+
+export interface ISuccessData {
+  total: number;
+}
