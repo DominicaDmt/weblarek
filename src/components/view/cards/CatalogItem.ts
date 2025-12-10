@@ -14,7 +14,7 @@ export class CatalogItem extends Card<IProduct> {
         
         this._category = ensureElement<HTMLElement>('.card__category', container);
         this._title = ensureElement<HTMLElement>('.card__title', container);
-        this._itemImage = ensureElement<HTMLImageElement>('.card__image', container); // используем _itemImage
+        this._itemImage = ensureElement<HTMLImageElement>('.card__image', container); 
         this._price = ensureElement<HTMLElement>('.card__price', container);
         this._button = container as HTMLButtonElement;
 

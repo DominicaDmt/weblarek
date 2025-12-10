@@ -49,10 +49,9 @@ export class ContactsForm extends Form<IContactsFormData> {
         this._phoneInput.value = value;
     }
 
+
     validate(): boolean {
-        const emailValid = this._emailInput.value.trim() !== '';
-        const phoneValid = this._phoneInput.value.trim() !== '';
-        return emailValid && phoneValid;
+        return true;
     }
 
     clear(): void {
