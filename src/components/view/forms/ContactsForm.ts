@@ -1,43 +1,33 @@
 import { Form } from './Form';
 import { ensureElement } from '../../../utils/utils';
+import { IEvents } from '../../base/Events';
 
 interface IContactsFormData {
     email: string;
     phone: string;
 }
 
-interface IContactsFormActions {
-    onInput: (field: keyof IContactsFormData, value: string) => void;
-    onSubmit: (event: Event) => void;
-}
-
 export class ContactsForm extends Form<IContactsFormData> {
     protected _emailInput: HTMLInputElement;
     protected _phoneInput: HTMLInputElement;
 
-    constructor(container: HTMLElement, actions?: IContactsFormActions) {
+    constructor(container: HTMLElement, protected events: IEvents) {
         super(container);
         
         this._emailInput = ensureElement<HTMLInputElement>('input[name="email"]', container);
         this._phoneInput = ensureElement<HTMLInputElement>('input[name="phone"]', container);
 
         this._emailInput.addEventListener('input', () => {
-            if (actions?.onInput) {
-                actions.onInput('email', this._emailInput.value);
-            }
+            events.emit('contacts.email:change', { email: this._emailInput.value });
         });
 
         this._phoneInput.addEventListener('input', () => {
-            if (actions?.onInput) {
-                actions.onInput('phone', this._phoneInput.value);
-            }
+            events.emit('contacts.phone:change', { phone: this._phoneInput.value });
         });
 
         container.addEventListener('submit', (event: Event) => {
             event.preventDefault();
-            if (actions?.onSubmit) {
-                actions.onSubmit(event);
-            }
+            events.emit('contacts:submit');
         });
     }
 
@@ -49,16 +39,21 @@ export class ContactsForm extends Form<IContactsFormData> {
         this._phoneInput.value = value;
     }
 
-
-    validate(): boolean {
-        return true;
-    }
-
-    clear(): void {
-        this._emailInput.value = '';
-        this._phoneInput.value = '';
-        this.errors = '';
-        this.valid = false;
+    setErrors(errors: Partial<Record<keyof IContactsFormData, string>>): void {
+        this.clearFieldErrors();
+        this.errors = ''; 
+        
+        if (errors.email) {
+            this.showFieldError('email', errors.email);
+        }
+        if (errors.phone) {
+            this.showFieldError('phone', errors.phone);
+        }
+        
+        const errorMessages = Object.values(errors).filter(Boolean);
+        if (errorMessages.length > 0) {
+            this.errors = errorMessages.join(', ');
+        }
     }
 
     render(data?: Partial<IContactsFormData>): HTMLElement {

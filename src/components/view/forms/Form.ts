@@ -22,8 +22,23 @@ export abstract class Form<T> extends Component<T> {
         this._submitButton.disabled = !value;
     }
 
-    abstract validate(): boolean;
-    abstract clear(): void;
+
+    protected showFieldError(fieldName: string, message: string): void {
+        const field = this.container.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            const errorElement = field.closest('.order__field')?.querySelector('.form__error');
+            if (errorElement) {
+                errorElement.textContent = message;
+            }
+        }
+    }
+
+    protected clearFieldErrors(): void {
+        const errorElements = this.container.querySelectorAll('.form__error');
+        errorElements.forEach(el => {
+            el.textContent = '';
+        });
+    }
 
     render(data?: Partial<T>): HTMLElement {
         super.render(data);

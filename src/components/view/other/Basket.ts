@@ -1,49 +1,53 @@
-import { ensureElement } from '../../../utils/utils';
+import { Component } from '../../base/Component'; 
+import { ensureElement } from '../../../utils/utils'; 
+import { IEvents } from '../../base/Events';
 
-interface IBasketActions {
-    onCheckout?: () => void;
-}
-
-export class Basket {
-    protected _container: HTMLElement;
-    protected _list: HTMLElement;
-    protected _total: HTMLElement;
+export class Basket extends Component<HTMLElement> { 
+    protected _list: HTMLElement; 
+    protected _total: HTMLElement; 
     protected _button: HTMLButtonElement;
+    protected _items: HTMLElement[] = [];
 
-    constructor(container: HTMLElement, actions?: IBasketActions) {
-        this._container = container;
-        this._list = ensureElement<HTMLElement>('.basket__list', container);
-        this._total = ensureElement<HTMLElement>('.basket__price', container);
-        this._button = ensureElement<HTMLButtonElement>('.basket__button', container);
+    constructor(container: HTMLElement, protected events: IEvents) { 
+        super(container); 
+        
+        this._list = ensureElement<HTMLElement>('.basket__list', container); 
+        this._total = ensureElement<HTMLElement>('.basket__price', container); 
+        this._button = ensureElement<HTMLButtonElement>('.basket__button', container); 
 
-        if (actions?.onCheckout) {
-            this._button.addEventListener('click', (event) => {
-                event.preventDefault();
-                // вызываем обработчик
-                actions.onCheckout!();
-            });
-        }
+        // сразу делаем кнопку неактивной
+        this._button.disabled = true;
+        
+        // Вешаем обработчик через EventEmitter
+        this._button.addEventListener('click', () => {
+            events.emit('basket:checkout');
+        });
+    } 
+    
+    // Добавляем setter для элементов
+    set items(elements: HTMLElement[]) {
+        this._items = elements;
+        this._list.replaceChildren(...elements);
+        this._button.disabled = elements.length === 0;
     }
 
-    set total(value: number) {
-        this.setText(this._total, `${value} синапсов`);
+    set total(value: number) { 
+        if (this._total) { 
+            this._total.textContent = `${value} синапсов`; 
+        } 
+    } 
+
+    set valid(value: boolean) {
+        this._button.disabled = !value;
     }
 
-    setCheckoutDisabled(disabled: boolean): void {
-        this._button.disabled = disabled;
-    }
+    clear(): void { 
+        this._list.replaceChildren(); 
+        this.total = 0;
+        this._button.disabled = true;
+    } 
 
-    clear(): void {
-        this._list.innerHTML = '';
-    }
-
-    render(): HTMLElement {
-        return this._container;
-    }
-
-    private setText(element: HTMLElement, value: string): void {
-        if (element) {
-            element.textContent = value;
-        }
-    }
+    render(): HTMLElement { 
+        return this.container; 
+    } 
 }

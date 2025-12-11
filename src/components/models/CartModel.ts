@@ -25,7 +25,7 @@ export class CartModel extends EventEmitter {
         }
     }
 
-    // Проверка наличия товара в корзине
+    // проверка наличия товара в корзине
     getItemIndex(id: string): number {
         return this._items.findIndex(item => item.id === id);
     }

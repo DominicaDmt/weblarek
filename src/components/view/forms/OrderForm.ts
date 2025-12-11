@@ -1,53 +1,41 @@
 import { Form } from './Form';
 import { ensureElement } from '../../../utils/utils';
+import { IEvents } from '../../base/Events';
 
 interface IOrderFormData {
     payment: string;
     address: string;
 }
 
-interface IOrderFormActions {
-    onPaymentChange: (button: HTMLButtonElement) => void;
-    onInput: (field: keyof IOrderFormData, value: string) => void;
-    onSubmit: (event: Event) => void;
-}
-
 export class OrderForm extends Form<IOrderFormData> {
     protected _paymentButtons: HTMLButtonElement[];
     protected _addressInput: HTMLInputElement;
-    protected _selectedPayment: string = '';
-
-    constructor(container: HTMLElement, actions?: IOrderFormActions) {
+    
+    constructor(container: HTMLElement, protected events: IEvents) {
         super(container);
         
         this._paymentButtons = Array.from(container.querySelectorAll('.order__buttons button'));
         this._addressInput = ensureElement<HTMLInputElement>('input[name="address"]', container);
 
+        // Вешаем обработчики через EventEmitter
         this._paymentButtons.forEach(button => {
             button.addEventListener('click', () => {
                 this.selectPayment(button.name);
-                if (actions?.onPaymentChange) {
-                    actions.onPaymentChange(button);
-                }
+                events.emit('order.payment:change', { payment: button.name });
             });
         });
 
         this._addressInput.addEventListener('input', () => {
-            if (actions?.onInput) {
-                actions.onInput('address', this._addressInput.value);
-            }
+            events.emit('order.address:change', { address: this._addressInput.value });
         });
 
         container.addEventListener('submit', (event: Event) => {
             event.preventDefault();
-            if (actions?.onSubmit) {
-                actions.onSubmit(event);
-            }
+            events.emit('order:submit');
         });
     }
-
+    
     selectPayment(payment: string): void {
-        this._selectedPayment = payment;
         this._paymentButtons.forEach(button => {
             if (button.name === payment) {
                 button.classList.add('button_alt-active');
@@ -64,17 +52,32 @@ export class OrderForm extends Form<IOrderFormData> {
     set address(value: string) {
         this._addressInput.value = value;
     }
-
-    validate(): boolean {
-        return this._selectedPayment !== '' && this._addressInput.value.trim() !== '';
-    }
-
-    clear(): void {
-        this._selectedPayment = '';
-        this._paymentButtons.forEach(button => button.classList.remove('button_alt-active'));
-        this._addressInput.value = '';
+    
+    setErrors(errors: Partial<Record<keyof IOrderFormData, string>>): void {
+        this.clearFieldErrors();
         this.errors = '';
-        this.valid = false;
+        
+        if (errors.payment) {
+            const paymentField = this.container.querySelector('.order__field');
+            if (paymentField) {
+                let errorElement = paymentField.querySelector('.form__error');
+                if (!errorElement) {
+                    errorElement = document.createElement('div');
+                    errorElement.className = 'form__error';
+                    paymentField.appendChild(errorElement);
+                }
+                errorElement.textContent = errors.payment;
+            }
+        }
+        
+        if (errors.address) {
+            this.showFieldError('address', errors.address);
+        }
+        
+        const errorMessages = Object.values(errors).filter(Boolean);
+        if (errorMessages.length > 0) {
+            this.errors = errorMessages.join(', ');
+        }
     }
 
     render(data?: Partial<IOrderFormData>): HTMLElement {

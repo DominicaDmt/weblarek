@@ -1,23 +1,20 @@
 import { Component } from '../../base/Component';
 import { ensureElement } from '../../../utils/utils';
-
-interface ISuccessActions {
-    onClose: () => void;
-}
+import { IEvents } from '../../base/Events';
 
 export class Success extends Component<{ total: number }> {
     protected _closeButton: HTMLButtonElement;
     protected _description: HTMLElement;
 
-    constructor(container: HTMLElement, actions?: ISuccessActions) {
+    constructor(container: HTMLElement, protected events: IEvents) {
         super(container);
         
         this._closeButton = ensureElement<HTMLButtonElement>('.order-success__close', container);
         this._description = ensureElement<HTMLElement>('.order-success__description', container);
 
-        if (actions?.onClose) {
-            this._closeButton.addEventListener('click', actions.onClose);
-        }
+        this._closeButton.addEventListener('click', () => {
+            events.emit('success:close');
+        });
     }
 
     set total(value: number) {
