@@ -39,7 +39,7 @@ const modal = new Modal(
 
 const page = new Page(
     document.body,
-    events  
+    events
 );
 
 const gallery = new Gallery(page.galleryContainer);
@@ -94,7 +94,13 @@ class AppPresenter {
         events.on('modal:close', () => this.onModalClose());
         
         // События от каталога
-        events.on('catalog:item-click', (data: { id: string }) => this.onCatalogItemClick(data.id));
+        events.on('catalog:item-click', (data: { id: string }) => {
+            const product = productModel.getItem(data.id);
+            if (product) {
+                // Товар открывается всегда, даже без цены
+                this.onCatalogItemClick(data.id);
+            }
+        });
         
         // События от превью
         events.on('product:toggle', () => this.onProductToggle());
@@ -166,10 +172,26 @@ class AppPresenter {
         if (product) { 
             // Проверяем наличие товара в корзине 
             const isInCart = cartModel.getItemIndex(product.id) !== -1; 
+            
+            // Проверяем цену товара
+            const isFree = product.price === null || product.price === 0;
              
             // Обновляем кнопку в превью
-            preview.buttonLabel = isInCart ? 'Удалить' : 'Купить';
-            preview.buttonAction = isInCart ? 'remove' : 'add';
+            if (isFree) {
+                // Товар без цены - блокируем кнопку
+                preview.disabled = true;
+                preview.buttonLabel = 'Недоступно';
+            } else if (isInCart) {
+                // Товар в корзине - кнопка "Удалить из корзины"
+                preview.disabled = false;
+                preview.buttonLabel = 'Удалить из корзины';
+                preview.buttonAction = 'remove';
+            } else {
+                // Товар не в корзине - кнопка "Купить"
+                preview.disabled = false;
+                preview.buttonLabel = 'Купить';
+                preview.buttonAction = 'add';
+            }
             
             const previewData = { 
                 ...product, 
@@ -185,6 +207,12 @@ class AppPresenter {
     private onProductToggle(): void {
         const product = productModel.getPreviewItem();
         if (product) {
+            // Проверка цены товара - если бесплатный, ничего не делаем
+            if (product.price === null || product.price === 0) {
+                console.log('Товар без цены, нельзя добавить в корзину:', product.title);
+                return; // Просто выходим, не закрывая модальное окно
+            }
+            
             const isInCart = cartModel.getItemIndex(product.id) !== -1;
             if (isInCart) {
                 console.log('Удаление из корзины (из превью):', product.title);
@@ -257,8 +285,6 @@ class AppPresenter {
         });
     } 
      
-    // Обработчики событий от представлений 
-     
     private onCatalogItemClick(productId: string): void { 
         const product = productModel.getItem(productId);
         if (product) {
@@ -282,7 +308,14 @@ class AppPresenter {
         if (items.length === 0) { 
             console.log('Корзина пуста, оформление невозможно'); 
             return; 
-        } 
+        }
+        
+        // Проверка, что все товары в корзине имеют цену
+        const itemsWithoutPrice = items.filter(item => item.price === null || item.price === 0);
+        if (itemsWithoutPrice.length > 0) {
+            console.log('В корзине есть товары без цены, оформление невозможно');
+            return;
+        }
         
         // Очищаем данные покупателя перед началом оформления 
         buyerModel.clearData(); 
@@ -349,7 +382,15 @@ class AppPresenter {
             console.log('Корзина пуста'); 
             contactsForm.errors = 'Корзина пуста'; 
             return; 
-        } 
+        }
+        
+        // Проверяем, что все товары имеют цену
+        const itemsWithoutPrice = cartItems.filter(item => item.price === null || item.price === 0);
+        if (itemsWithoutPrice.length > 0) {
+            console.log('Есть товары без цены');
+            contactsForm.errors = 'Некоторые товары недоступны для заказа';
+            return;
+        }
         
         try { 
             console.log('Отправка заказа'); 

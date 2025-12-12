@@ -25,7 +25,7 @@ export class BasketItem extends Card<IProduct> {
         if (this._index) { 
             this._index.textContent = String(value); 
         } 
-    } 
+    }
 
     render(data?: Partial<IProduct>): HTMLElement { 
         super.render(data); 

@@ -24,9 +24,9 @@ export abstract class Card<T> extends Component<T> {
     }
 
     set price(value: number | null) {
-        if (value === null) {
+        if (value === null || value === 0) { // Добавлена проверка на 0
             if (this._price) {
-                this._price.textContent = 'Бесценно';
+                this._price.textContent = 'Бесценно'; 
             }
         } else {
             if (this._price) {
@@ -47,7 +47,9 @@ export abstract class Card<T> extends Component<T> {
     }
 
     set image(src: string) {
-        this.setImage(this._itemImage!, src);
+        if (this._itemImage) {
+            this.setImage(this._itemImage, src);
+        }
     }
 
     set description(value: string) {
